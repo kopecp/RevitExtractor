@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Lokalny viewer 3D i przeglądarka eksportów RevitExtractor">
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <title>Analyzer · Revit Extractor</title>
+</head>
+<body>
+  <aside class="rail" aria-label="Nawigacja">
+    <a class="brand" href="/" title="Analyzer"><img src="/mark.svg" alt="Analyzer"></a>
+    <button class="rail-button active" data-page="model" title="Model 3D" aria-label="Model 3D"><i data-icon="cube"></i><span>Model</span></button>
+    <button class="rail-button" data-page="drawings" title="Rysunki i PDF" aria-label="Rysunki i PDF"><i data-icon="layers"></i><span>Rysunki</span></button>
+    <button class="rail-button" data-page="data" title="Baza danych" aria-label="Baza danych"><i data-icon="database"></i><span>Dane</span></button>
+    <div class="rail-bottom"><span class="local-dot"></span><span>LOCAL</span></div>
+  </aside>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="wordmark">analyzer<span> / </span><small>REVIT EXTRACTOR</small></div>
+      <div class="top-actions"><span class="local-badge"><span class="local-dot"></span> Dane lokalne</span><button class="button primary" id="open-folder"><i data-icon="folder"></i> Otwórz folder</button></div>
+    </header>
+    <section class="projectbar">
+      <div><div class="eyebrow">PRZESTRZEŃ MODELU <span id="export-date"></span></div><h1 id="project-name">Twój model, z bliska.</h1><p id="project-subtitle">Wczytaj eksport RevitExtractor i rozpocznij przeglądanie.</p></div>
+      <div class="project-stats"><div><strong id="count-models">—</strong><span>widoki 3D</span></div><div><strong id="count-pdfs">—</strong><span>rysunki PDF</span></div><div><strong id="count-elements">—</strong><span>rekordy w bazie</span></div></div>
+    </section>
+
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-top"><label class="field-label" for="export-select">OTWARTY EKSPORT</label><select id="export-select" aria-label="Wybierz eksport"><option>Wybierz folder…</option></select></div>
+        <div class="side-heading"><h2 id="sidebar-title">Zawartość eksportu</h2><span class="pill" id="view-count">0</span></div>
+        <div class="searchbox"><i data-icon="search"></i><input id="view-search" placeholder="Szukaj widoku…" aria-label="Szukaj widoku"></div>
+        <div id="view-list" class="view-list"><p class="muted pad">Otwórz folder output, aby zobaczyć widoki.</p></div>
+        <div class="source-note"><i data-icon="shield"></i><div><strong>Oryginalne pliki, tylko odczyt</strong><span id="source-path">Folder nie został wybrany</span></div></div>
+      </aside>
+
+      <main class="main">
+        <section id="model-page" class="page active">
+          <div class="panelbar"><div class="panel-title"><span class="status-dot"></span><strong id="active-view-name">Model 3D</strong><span class="pill">SVF</span></div><button id="fit-model" class="button subtle" disabled><i data-icon="maximize"></i> Dopasuj</button></div>
+          <div class="viewer-area">
+            <div id="viewer"></div>
+            <div id="viewer-message" class="viewer-message"><div class="message-symbol"><i data-icon="cube"></i></div><h2>Spójrz na projekt z każdej strony.</h2><p>Wybierz lokalny eksport, aby otworzyć interaktywny model i jego właściwości.</p><button class="button primary" id="sample-button">Otwórz ostatni eksport <i data-icon="arrow"></i></button></div>
+            <div class="viewer-hint" id="viewer-hint" hidden><i data-icon="mouse"></i><span>Obrót: lewy przycisk · Przesuwanie: środkowy · Zoom: kółko · Kliknij element, aby zobaczyć parametry</span></div>
+          </div>
+          <div class="model-tools"><div><button class="button" id="show-all" disabled><i data-icon="eye"></i> Pokaż wszystko</button><button class="button" id="section-model" disabled><i data-icon="section"></i> Przekrój</button><button class="button" id="model-tree" disabled><i data-icon="tree"></i> Drzewo</button></div><span id="geometry-status" class="muted">Model nie jest wczytany</span></div>
+        </section>
+
+        <section id="drawings-page" class="page">
+          <div class="panelbar"><div class="panel-title"><strong>Rysunki i arkusze</strong><span id="drawing-count" class="pill">0</span></div><input id="drawing-search" class="compact-search" placeholder="Szukaj po nazwie…" aria-label="Szukaj rysunku"></div>
+          <div id="drawing-grid" class="drawing-grid"></div>
+          <div id="drawing-preview" class="drawing-preview" hidden><div class="preview-heading"><button id="close-preview" class="button"><i data-icon="back"></i> Galeria</button><strong id="drawing-title"></strong><a class="button" id="open-pdf" target="_blank" rel="noopener"><i data-icon="external"></i> Otwórz PDF</a></div><div class="pdf-tools"><button id="pdf-previous" class="button" aria-label="Poprzednia strona PDF">‹</button><span id="pdf-page-label">Strona —</span><button id="pdf-next" class="button" aria-label="Następna strona PDF">›</button><select id="pdf-zoom" aria-label="Powiększenie PDF"><option value="fit">Dopasuj szerokość</option><option value="1">100%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select><span id="pdf-status" role="status"></span></div><div id="pdf-canvas-wrap" role="region" aria-label="Podgląd rysunku PDF"></div></div>
+        </section>
+
+        <section id="data-page" class="page">
+          <div class="panelbar"><div class="panel-title"><strong>Baza danych</strong><span class="pill">TYLKO ODCZYT</span></div><button class="button" id="export-csv" disabled><i data-icon="download"></i> CSV strony</button></div>
+          <div class="data-filters"><div class="searchbox"><i data-icon="search"></i><input id="data-search" placeholder="Nazwa, dbId, ElementId, UniqueId…" aria-label="Szukaj w bazie"></div><select id="category-filter" aria-label="Kategoria"><option value="">Wszystkie kategorie</option></select><select id="table-mode" aria-label="Widok bazy"><option value="elements">Obiekty i parametry</option><option value="_objects_id">SQLite · Identyfikatory</option><option value="_objects_attr">SQLite · Atrybuty</option><option value="_objects_val">SQLite · Wartości</option><option value="_objects_eav">SQLite · Relacje EAV</option></select></div>
+          <p class="table-note" id="table-note">Rekordy obejmują także typy, widoki i dane linków. Nie każdy rekord ma geometrię w aktualnym widoku 3D.</p>
+          <div class="table-wrap"><table id="data-table"><thead></thead><tbody></tbody></table><div id="data-empty" class="empty-state" hidden>Brak wyników. Zmień wyszukiwanie lub kategorię.</div></div>
+          <div class="pagination"><span id="data-range">Wybierz eksport</span><div><button id="previous-page" class="button" disabled><i data-icon="back"></i> Poprzednia</button><button id="next-page" class="button" disabled>Następna <i data-icon="arrow"></i></button></div></div>
+        </section>
+      </main>
+
+      <aside class="inspector">
+        <div class="inspector-header"><h2>Inspektor</h2><span class="pill" id="selection-count">ELEMENT</span><button class="icon-button" id="clear-selection" title="Wyczyść wybór" aria-label="Wyczyść wybór" hidden>×</button></div>
+        <div id="inspector-empty" class="inspector-empty"><div class="empty-cube"><i data-icon="cursor"></i></div><h3>Co jest w środku?</h3><p>Kliknij element modelu lub rekord w bazie, aby poznać jego właściwości.</p><div class="inspector-tip"><i data-icon="info"></i><span>Wybór w modelu i tabela korzystają z tego samego identyfikatora dbId.</span></div></div>
+        <div id="inspector-content" hidden><div class="element-heading"><span id="element-category" class="eyebrow"></span><h3 id="element-name"></h3><div class="id-row"><span id="element-dbid"></span><span id="element-revitid"></span></div></div><div class="selection-actions"><button class="button primary" id="focus-element">Zbliż</button><button class="button" id="isolate-element">Izoluj</button><button class="button" id="hide-element">Ukryj</button></div><p id="element-visibility" class="element-visibility"></p><div class="searchbox property-search"><i data-icon="search"></i><input id="property-search" placeholder="Szukaj parametru…" aria-label="Szukaj parametru"></div><div id="properties" class="properties"></div></div>
+        <div class="inspector-footer"><i data-icon="link"></i><span>Geometria + właściwości</span></div>
+      </aside>
+    </div>
+    <footer class="statusbar"><span><span class="local-dot"></span><span id="status-text">Gotowy do pracy</span></span><span>Analyzer <b>0.1</b> <span class="status-divider">/</span> RevitExtractor</span></footer>
+  </div>
+
+  <dialog id="folder-dialog"><form id="folder-form"><div class="dialog-heading"><div><span class="eyebrow">NOWY EKSPORT</span><h2>Otwórz folder output</h2></div><button type="button" class="icon-button" id="close-dialog" aria-label="Zamknij">×</button></div><p>Wybierz folder wygenerowany przez RevitExtractor. Pliki będą odczytywane bezpośrednio z dysku.</p><button type="button" class="button folder-picker" id="browse-folder"><i data-icon="folder"></i> Wybierz folder z dysku</button><label class="field-label" for="folder-path">LUB WKLEJ PEŁNĄ ŚCIEŻKĘ</label><input id="folder-path" placeholder="C:\projekty\eksport\output" autocomplete="off"><p id="folder-error" class="error-text" role="alert"></p><div class="dialog-foot"><span>Silnik 3D wymaga połączenia z CDN Autodesk.</span><button class="button primary" type="submit">Wczytaj eksport <i data-icon="arrow"></i></button></div></form></dialog>
+  <div id="toast" role="status" hidden></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
