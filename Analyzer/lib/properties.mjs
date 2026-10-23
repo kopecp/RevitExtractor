@@ -19,10 +19,11 @@ export class PropertyStore {
     for (let id = 1; id < this.ids.length; id++) {
       const externalId = String(this.ids[id] ?? '');
       if (!externalId && this.offs[id] === this.offs[id + 1]) continue;
-      const basic = { dbId: id, externalId, name: '', category: '', parent: null, typeId: null, elementId: null };
+      const basic = { dbId: id, externalId, name: '', category: '', categoryId: null, parent: null, typeId: null, elementId: null };
       this.each(id, (attr, value) => {
         if (attr[1] === '__name__') basic.name = String(value);
         if (attr[1] === '__category__') basic.category = String(value).replace(/^Revit /, '');
+        if (attr[0] === 'CategoryId' && Number.isInteger(Number(value))) basic.categoryId = Number(value);
         if (attr[1] === '__parent__') basic.parent = Number(value);
         if (attr[1] === '__instanceof__') basic.typeId = Number(value);
         if (attr[1] === '__revit__' && attr[0] === 'ElementId' && /^\d+$/.test(String(value))) basic.elementId = Number(value);
@@ -36,12 +37,13 @@ export class PropertyStore {
       // Category can be inherited from the type/category hierarchy.
       const seen = new Set([row.dbId]);
       let source = row;
-      while (!row.category && source && seen.size < 50) {
+      while ((!row.category || row.categoryId === null) && source && seen.size < 50) {
         const id = source.typeId || source.parent;
         if (!id || seen.has(id)) break;
         seen.add(id);
         source = this.byId.get(id);
-        if (source?.category) row.category = source.category;
+        if (!row.category && source?.category) row.category = source.category;
+        if (row.categoryId === null && source?.categoryId !== null && source?.categoryId !== undefined) row.categoryId = source.categoryId;
       }
       row.name ||= this.byId.get(row.typeId)?.name || `Obiekt ${row.dbId}`;
       row.category ||= 'Bez kategorii';

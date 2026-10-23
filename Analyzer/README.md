@@ -60,6 +60,21 @@ Szybki scenariusz:
 
 Parametry zachowują **wartości i jednostki z eksportu**. Aplikacja nie przelicza ich automatycznie na SI. Informacja „z typu” oznacza wartość pochodzącą z powiązanego rekordu typu.
 
+## Widoczność modeli i kategorii
+
+Otwórz **Drzewo → Modele**. Każdy model źródłowy ma oczko; po rozwinięciu zobaczysz kategorie z osobnymi oczkami. Wyłączenie kategorii działa tylko w danym modelu. Wyłączenie całego modelu zachowuje ustawienia jego kategorii i pojedynczych ukrytych elementów.
+
+- **Kategorie** zachowuje dotychczasowe drzewo Autodesk z rodzinami i typami. Oczko kategorii działa globalnie, pozostawiając wyłączone modele wyłączone.
+- Złote oznaczenie wskazuje częściową widoczność. Licznik pokazuje widoczne/wszystkie obiekty geometrii bieżącego widoku; obejmuje również geometryczne części elementów złożonych, więc może różnić się od licznika instancji w natywnym drzewie.
+- Kategorie odpowiadają gałęziom drzewa bieżącego widoku. Np. zagnieżdżona część okna jest sterowana z gałęzi Windows, nawet jeśli jej własny rekord właściwości ma kategorię Generic Models.
+- Model bez geometrii w danym widoku ma nieaktywne oczko. Samo odwołanie do niezaładowanego linka, bez metadanych eksportu lub rekordów z jego prefiksem, nie tworzy modelu źródłowego.
+- **Pokaż wszystko** resetuje widoczność obu poziomów. Ustawienia nie są zapisywane między widokami, eksportami ani sesjami.
+- Ukrywanie nie pozostawia półprzezroczystych obiektów. Przybliżenie i izolacja nie włączają po cichu modelu lub kategorii wyłączonej w drzewku.
+
+Na eksporcie `test-f5a35b5a55bf40a9a4b14ecd2ca573d7/output` widok **Cover** zawiera geometrię wszystkich sześciu linków; widok **{3D}** ma samą geometrię HVAC. Przełączniki nie mogą pokazać geometrii, której nie zapisano w wybranym SVF.
+
+Podgląd: [drzewo modeli](docs/source-models.png). Wyniki testów: [weryfikacja widoczności](docs/VERIFICATION-models.md).
+
 ## Lokalność i ograniczenia
 
 - Eksporty są odczytywane bez kopiowania i bez zapisu do oryginalnych plików. `model.sdb` jest otwierany w trybie `readOnly`.

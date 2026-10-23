@@ -48,6 +48,7 @@ function message(title, description, loading = false, retry = false) {
 function modelButtons(enabled) { ['fit-model', 'show-all', 'section-model', 'model-tree'].forEach(id => { $(`#${id}`).disabled = !enabled; }); }
 
 const model = new ModelViewer($('#viewer'), {
+  notice: toast,
   select: ids => {
     $('#selection-count').textContent = ids.length > 1 ? `${ids.length} WYBRANYCH` : 'ELEMENT';
     if (ids.length) selectElement(ids[0], false);
@@ -126,7 +127,9 @@ async function loadView(view) {
   $('#geometry-status').textContent = 'Inicjalizacja viewera…';
   message('Otwieranie modelu', 'Wczytuję geometrię i właściwości z lokalnego eksportu.', true);
   const exportId = state.current.id;
-  try { await model.load(view); }
+  try {
+    await model.load(view, state.current.hasProperties ? (ids, signal) => api(`/api/exports/${exportId}/source-models`, { method: 'POST', body: JSON.stringify({ ids }), signal }) : null);
+  }
   catch (error) {
     if (exportId !== state.current.id || state.view !== view) return;
     message('Nie udało się otworzyć modelu', error.message, false, true);

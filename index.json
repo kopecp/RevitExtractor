@@ -1,30 +1,30 @@
 {
   "metadata": {
     "parameters": {
+      "direct_params": {
+        "IFCExportOption": "PiKej_A1"
+      }, 
       "derivative_type": {
-        "3dviewing": {
+        "2dviewing": {
           "view_unique_ids": [
-            "4077836e-853b-48eb-bfd2-75e039951dfc-0014d13e", 
-            "5895d43e-7fd5-4d49-bd34-61d5982e9cf7-001738a3", 
-            "ad22e963-e73d-4e96-b92b-c61698a56a63-001747fa"
+            "3bb22a9e-3417-47b0-bb0b-83b93283593f-00b92bc4", 
+            "889cdbaa-8d57-48e0-a473-38ce64d21a31-00ed0939", 
+            "bc9e0ddf-103a-4cd9-b106-233bd9fee52a-00ba1d14"
           ]
-        }, 
-        "properties_data": {
-          "pdb": true
         }, 
         "export": {
           "to": [
             "ifc"
           ]
         }, 
-        "2dviewing": {
+        "3dviewing": {
           "view_unique_ids": [
-            "d37b12da-a3ea-47b4-adce-c020870a5bf5-0015aea3"
+            "58f09784-a682-4c08-8dc1-87a4c9ed19eb-0043f619"
           ]
+        }, 
+        "properties_data": {
+          "pdb": true
         }
-      }, 
-      "direct_params": {
-        "IFCExportOption": "PiKej"
       }
     }
   }

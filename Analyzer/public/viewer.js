@@ -1,3 +1,6 @@
+import { VisibilityState, ViewerVisibility, viewerCategories } from './visibility.js';
+import { createSourceTreePanel } from './source-tree.js';
+
 const SDK = 'https://developer.api.autodesk.com/modelderivative/v2/viewers/7.130.0/';
 let sdkPromise;
 
@@ -30,8 +33,10 @@ export class ModelViewer {
     this.observer.observe(container);
   }
 
-  async load(view) {
+  async load(view, sourceRequest) {
     this.cancelLoad?.();
+    this.clearSources();
+    this.sourceRequest = sourceRequest;
     const loadId = ++this.loadId;
     this.ready = false;
     this.geometryIds.clear();
@@ -46,6 +51,7 @@ export class ModelViewer {
     viewer.setBackgroundColor(238, 243, 239, 238, 243, 239);
     viewer.setGroundShadow(false);
     viewer.setGroundReflection(false);
+    viewer.setGhosting(false);
     viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, event => this.events.select(event.dbIdArray));
     viewer.addEventListener(Autodesk.Viewing.PROGRESS_UPDATE_EVENT, event => {
       if (!this.ready && Number.isFinite(event.percent)) this.events.progress(Math.round(event.percent));
@@ -63,6 +69,7 @@ export class ModelViewer {
         for (const id of fragments?.fragments?.fragId2dbId || []) this.geometryIds.add(id);
         viewer.fitToView();
         this.events.ready(this.geometryIds.size);
+        this.loadSources();
         resolve();
       });
       // Local-mode SVF loader applies encodeURI itself and prepends the origin.
@@ -79,14 +86,29 @@ export class ModelViewer {
   fit() { if (this.ready) this.viewer.fitToView(); }
   select(id, fit = false) {
     if (!this.has(id)) return false;
+    if (this.visibility && !this.visibility.state.allowed(id)) {
+      this.events.notice?.('Element należy do ukrytego modelu lub kategorii. Włącz oczko w drzewku Modele.'); return false;
+    }
     this.viewer.select([id]);
-    if (fit) { this.viewer.show([id]); this.viewer.fitToView([id]); }
+    if (fit) {
+      if (this.visibility) { this.visibility.state.setHidden([id], false); this.visibility.state.isolate(null); this.visibility.apply(); }
+      else this.viewer.show([id]);
+      this.viewer.fitToView([id]);
+    }
     return true;
   }
-  isolate(id) { if (this.has(id)) { this.viewer.isolate([id]); this.viewer.fitToView([id]); } }
+  isolate(id) {
+    if (!this.has(id)) return;
+    if (this.visibility) {
+      if (!this.visibility.state.allowed(id)) { this.events.notice?.('Włącz model i kategorię tego elementu w drzewku Modele.'); return; }
+      this.visibility.state.setHidden([id], false); this.visibility.state.isolate([id]); this.visibility.apply();
+    } else this.viewer.isolate([id]);
+    this.viewer.fitToView([id]);
+  }
   hide(id) { if (this.has(id)) this.viewer.hide([id]); }
   reset() {
     if (!this.ready) return;
+    this.visibility?.reset();
     this.viewer.showAll(); this.viewer.clearSelection(); this.viewer.fitToView();
     this.viewer.getExtension('Autodesk.Section')?.deactivate();
   }
@@ -102,5 +124,42 @@ export class ModelViewer {
     if (extension.isActive()) extension.deactivate();
     else extension.activate();
   }
-  clear() { this.cancelLoad?.(); this.loadId++; this.ready = false; this.geometryIds.clear(); this.viewer?.finish(); this.viewer = null; }
+  async loadSources() {
+    const viewer = this.viewer, loadId = this.loadId;
+    if (!this.ready || this.sourceLoading) return;
+    this.sourceError = ''; this.sourcePanel?.renderModels();
+    this.sourceAbort = new AbortController();
+    this.sourceLoading = true;
+    try {
+      if (!this.sourceRequest) throw new Error('Brak bazy właściwości do rozpoznania modeli.');
+      const data = await this.sourceRequest([...this.geometryIds], this.sourceAbort.signal);
+      if (this.viewer !== viewer || this.loadId !== loadId) return;
+      const tree = await new Promise(resolve => viewer.model.getObjectTree(resolve, () => resolve(null)));
+      if (this.viewer !== viewer || this.loadId !== loadId) return;
+      this.visibility?.dispose();
+      this.visibility = new ViewerVisibility(viewer, new VisibilityState(viewerCategories(data, tree)), Autodesk.Viewing, () => this.sourcePanel?.refreshEyes());
+    } catch (error) {
+      if (this.viewer !== viewer || this.loadId !== loadId || error.name === 'AbortError') return;
+      this.sourceError = `Nie udało się rozpoznać modeli: ${error.message}`;
+    } finally {
+      if (this.viewer === viewer && this.loadId === loadId) {
+        this.sourceLoading = false;
+        try {
+          const extension = viewer.getExtension('Autodesk.ModelStructure') || await viewer.loadExtension('Autodesk.ModelStructure');
+          if (this.viewer !== viewer || this.loadId !== loadId) return;
+          if (!this.sourcePanel) {
+            const visible = extension.isActive();
+            this.sourcePanel = createSourceTreePanel(viewer, this); extension.setModelStructurePanel(this.sourcePanel);
+            if (visible) extension.activate();
+          }
+          else this.sourcePanel.renderModels();
+        } catch (error) { this.events.notice?.(`Drzewko modeli jest niedostępne: ${error.message}`); }
+      }
+    }
+  }
+  clearSources() {
+    this.sourceAbort?.abort(); this.visibility?.dispose(); this.visibility = null;
+    this.sourcePanel = null; this.sourceLoading = false; this.sourceError = ''; this.sourceRequest = null;
+  }
+  clear() { this.cancelLoad?.(); this.loadId++; this.clearSources(); this.ready = false; this.geometryIds.clear(); this.viewer?.finish(); this.viewer = null; }
 }

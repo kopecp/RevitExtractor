@@ -1213,3 +1213,34 @@ dialog p {
   font-size:21px;
   margin-left:15px
 }
+/* Model/source visibility panel, hosted by Autodesk.ModelStructure. */
+.adsk-viewing-viewer .source-browser { width:440px; min-width:300px; max-width:calc(100% - 20px); color:var(--dark); background:#fff; }
+.adsk-viewing-viewer .source-browser [hidden] { display:none !important; }
+.adsk-viewing-viewer .source-browser .source-tabs { position:absolute; top:50px; left:0; right:0; height:40px; display:flex; gap:4px; padding:0 12px; border-bottom:1px solid var(--line); z-index:2; box-sizing:border-box; }
+.adsk-viewing-viewer .source-browser .source-tabs button { flex:1; border:0; border-bottom:3px solid transparent; background:none; color:var(--muted); font-weight:600; }
+.adsk-viewing-viewer .source-browser .source-tabs button[aria-selected="true"] { color:var(--green); border-bottom-color:var(--green); background:var(--mint); }
+.adsk-viewing-viewer .source-browser .source-models { position:absolute; top:98px; bottom:18px; left:0; right:0; overflow:auto; padding:0 8px 12px; font:12px "Segoe UI",Arial,sans-serif; }
+.adsk-viewing-viewer .source-browser .source-native-search { top:96px !important; }
+.adsk-viewing-viewer .source-browser .source-native-tree { position:absolute !important; top:132px !important; height:calc(100% - 150px) !important; }
+.adsk-viewing-viewer .source-browser .source-model { border-bottom:1px solid var(--line); }
+.adsk-viewing-viewer .source-browser .source-model > summary { display:flex; align-items:center; gap:6px; padding:9px 4px; cursor:pointer; list-style:none; min-height:46px; }
+.adsk-viewing-viewer .source-browser .source-model > summary::-webkit-details-marker { display:none; }
+.adsk-viewing-viewer .source-browser .source-model > summary::before { content:'›'; font-size:18px; width:12px; flex-shrink:0; text-align:center; }
+.adsk-viewing-viewer .source-browser .source-model[open] > summary::before { transform:rotate(90deg); }
+.adsk-viewing-viewer .source-browser .source-model > summary .source-name { font-weight:600; }
+.adsk-viewing-viewer .source-browser .source-name { flex:1; min-width:0; overflow-wrap:anywhere; line-height:1.4; }
+.adsk-viewing-viewer .source-browser .source-count { flex-shrink:0; color:var(--muted); font-size:10px; font-variant-numeric:tabular-nums; }
+.adsk-viewing-viewer .source-browser .source-category { display:flex; align-items:center; gap:6px; padding:4px 4px 4px 22px; min-height:35px; border-radius:4px; }
+.adsk-viewing-viewer .source-browser .source-category:hover, .adsk-viewing-viewer .source-browser .source-model > summary:hover { background:#f3f7f5; }
+.adsk-viewing-viewer .source-browser .source-eye { box-sizing:border-box; width:30px; height:30px; padding:5px; border:1px solid transparent; background:none; color:var(--green); border-radius:5px; flex-shrink:0; }
+.adsk-viewing-viewer .source-browser .source-eye:hover { background:var(--mint); border-color:var(--line); }
+.adsk-viewing-viewer .source-browser .source-eye svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.adsk-viewing-viewer .source-browser .source-eye .eye-slash, .adsk-viewing-viewer .source-browser .source-eye .eye-partial { display:none; }
+.adsk-viewing-viewer .source-browser .source-eye[data-state="off"] { color:#8a9791; }
+.adsk-viewing-viewer .source-browser .source-eye[data-state="off"] .eye-slash { display:block; }
+.adsk-viewing-viewer .source-browser .source-eye[data-state="partial"] { color:#9b6a16; }
+.adsk-viewing-viewer .source-browser .source-eye[data-state="partial"] .eye-partial { display:block; stroke-width:3; }
+.adsk-viewing-viewer .source-browser .source-blocked > .source-name, .adsk-viewing-viewer .source-browser .source-blocked > summary > .source-name { color:var(--muted); }
+.adsk-viewing-viewer .source-browser .source-empty, .adsk-viewing-viewer .source-browser .source-tree-message { padding:12px 18px; color:var(--muted); line-height:1.5; }
+.adsk-viewing-viewer .source-browser .source-retry { margin:0 16px; }
+.adsk-viewing-viewer .source-browser .source-native-partial > lmvheader > .visibility { opacity:.65; border-bottom:2px solid #9b6a16; }

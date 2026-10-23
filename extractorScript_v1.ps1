@@ -1,6 +1,6 @@
 $revitDir = 'C:\Program Files\Autodesk\Revit 2026'
 $exe = Join-Path $revitDir 'RevitExtractor\RevitExtractor.exe'
-$sourceModel = 'C:\Users\Piotr.Kopec\source\CDL\pyRevit\SampleModels\SnowdonHVAC.rvt'
+$sourceModel = 'C:\Users\Piotr.Kopec\OneDrive - DEFOR SA\Dokumenty\LocalCentral\26_9000 AFI TOWAROWA A1_2026_central_FACADE_19oct2026_local_central.rvt'
 $indexTemplate = Join-Path $PSScriptRoot 'index.json'
 
 if (-not (Test-Path -LiteralPath $indexTemplate -PathType Leaf)) {

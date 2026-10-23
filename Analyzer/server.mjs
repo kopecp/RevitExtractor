@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { ExportRegistry, inside } from './lib/exports.mjs';
+import { SourceModelIndex, readSourceMetadata } from './lib/source-models.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const execFileAsync = promisify(execFile);
@@ -18,11 +19,11 @@ function json(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-async function body(req) {
+async function body(req, maxBytes = 16_384) {
   const chunks = []; let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 16_384) throw new Error('Zbyt duże żądanie.');
+    if (size > maxBytes) throw new Error('Zbyt duże żądanie.');
     chunks.push(chunk);
   }
   return JSON.parse(Buffer.concat(chunks).toString() || '{}');
@@ -72,6 +73,14 @@ export async function createAnalyzer({ discover = true, parent = path.dirname(RO
       const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
       if (req.method === 'POST') {
         if (req.headers['x-analyzer-token'] !== token) return json(res, 403, { error: 'Odśwież stronę i spróbuj ponownie.' });
+        if (parts.length === 4 && parts[0] === 'api' && parts[1] === 'exports' && parts[3] === 'source-models') {
+          const item = registry.get(parts[2]);
+          const data = await body(req, 12_000_000);
+          if (!Array.isArray(data.ids) || data.ids.length > 1_000_000 || data.ids.some(id => !Number.isSafeInteger(id) || id <= 0 || id > 2147483647)) throw new Error('Nieprawidłowa lista identyfikatorów geometrii.');
+          const store = registry.store(item.id);
+          store.sourceModels ||= new SourceModelIndex(store, { exportId: item.id, name: item.name, metadata: readSourceMetadata(path.join(item.root, 'Resource')) });
+          return json(res, 200, store.sourceModels.tree(data.ids));
+        }
         if (url.pathname === '/api/open') {
           const data = await body(req);
           if (typeof data.path !== 'string' || !data.path.trim()) throw new Error('Podaj ścieżkę folderu output.');

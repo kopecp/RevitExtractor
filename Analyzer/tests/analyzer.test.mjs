@@ -114,3 +114,14 @@ test('SQLite table API is paginated and allowlisted', async () => {
   assert.ok(result.columns.includes('external_id'));
   assert.equal((await fetch(`${base}/api/exports/${item.id}/tables/sqlite_master`)).status, 400);
 });
+
+test('source tree API is geometry-scoped, validated and requires the session token', async () => {
+  const url = `${base}/api/exports/${item.id}/source-models`;
+  const post = { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Analyzer-Token': session.token }, body: JSON.stringify({ ids: [3199, 9522, 3199] }) };
+  assert.equal((await fetch(url, { ...post, headers: {} })).status, 403);
+  const response = await fetch(url, post); assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.total, 2);
+  assert.deepEqual(result.models.flatMap(model => model.categories.flatMap(category => category.ids)).sort((a, b) => a - b), [3199, 9522]);
+  assert.equal((await fetch(url, { ...post, body: JSON.stringify({ ids: [0, '1'] }) })).status, 400);
+});

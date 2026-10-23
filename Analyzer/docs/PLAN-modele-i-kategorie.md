@@ -1,6 +1,6 @@
 # Analyzer — widoczność modeli i kategorii
 
-Data: 23.10.2026. Status: plan do weryfikacji, bez wdrożenia.
+Data: 23.10.2026. Status: wdrożono po akceptacji. Poniżej zachowano plan i ustalenia analizy; aktualne wyniki: [VERIFICATION-models.md](VERIFICATION-models.md).
 
 ## 1. Uzgodniony sposób obsługi
 
@@ -157,6 +157,8 @@ Przewidywane pliki: nowe moduły źródeł i widoczności, `lib/properties.mjs`,
 11. **Kontrola końcowa:** `npm run check`, odpowiednie testy indeksowania i stanów widoczności, istniejące testy integracyjne, a następnie przeglądarka z kompletnie wczytaną geometrią. Sprawdzić konsolę oraz brak zmian w źródłowych plikach eksportu.
 
 ## 7. Granica obecnej weryfikacji
+
+Poniższy opis dotyczy etapu analizy przed akceptacją. Implementacja korzysta z gałęzi kategorii rzeczywistego drzewa Viewera (z kategorią właściwości jako wariantem zapasowym), aby poprawnie obejmować zagnieżdżone części elementów. Panel jest rozszerzony przez `setModelStructurePanel`; lokalny delegat renderowania odzwierciedla częściową widoczność w starym drzewie. Nie zmieniono plików SDK. Wyniki wdrożenia i ograniczenia są zapisane w osobnym raporcie weryfikacji.
 
 Potwierdzono strukturę danych, zgodność prefiksów z instancjami linków w dwóch eksportach z linkami, wariant bez linków, nazwy linków, kolizję `documentId` i miejsca integracji w kodzie. Istnieją podstawy do wdrożenia funkcji na obecnych eksportach bez uruchamiania Revita.
 
