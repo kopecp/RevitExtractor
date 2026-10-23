@@ -1,7 +1,7 @@
 title: "Eksport\nsetup"
 tooltip: >-
-  Wybierz widoki i arkusze aktywnego modelu oraz zapisz index.json
-  dla natywnego Autodesk Revit Extractor. Przycisk nie uruchamia eksportu.
+  Wybierz widoki i arkusze, przygotuj setup IFC w modelu i zapisz index.json
+  dla Autodesk Revit Extractor. Plik RVT zapisujesz samodzielnie.
 author: RevitExtractor
 min_revit_version: 2026
 engine:

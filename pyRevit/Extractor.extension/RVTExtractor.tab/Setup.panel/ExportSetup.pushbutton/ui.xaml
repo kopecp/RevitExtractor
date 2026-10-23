@@ -155,10 +155,58 @@
                         <TextBlock Text="Dodatkowe formaty" FontSize="16" FontWeight="SemiBold"/>
                         <CheckBox x:Name="dwg_cb" Content="DWG"/>
                         <CheckBox x:Name="ifc_cb" Content="IFC"/>
-                        <TextBlock Text="DWG i IFC korzystają z natywnych ustawień eksportera. W tej wersji konfiguratora nie edytujemy ich szczegółowych opcji."
+                        <TextBlock Text="Ustawienia IFC możesz przygotować w zakładce Setup IFC. DWG korzysta z natywnych ustawień eksportera."
                                    TextWrapping="Wrap" Foreground="#536277" Margin="0,4,0,0"/>
                     </StackPanel>
                 </ScrollViewer>
+            </TabItem>
+            <TabItem x:Name="ifc_tab" Header="Setup IFC">
+                <Grid Margin="18">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <StackPanel Margin="0,0,0,12">
+                        <TextBlock Text="Wybierz zapisany setup Autodesk" FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Text="Przygotujemy zgodny zapis pod tą samą nazwą. Po zastosowaniu zapisz index.json oraz RVT."
+                                   TextWrapping="Wrap" Foreground="#536277" Margin="0,6,0,2"/>
+                        <ComboBox x:Name="ifc_source_cb" Padding="8,6" Margin="0,6,0,2"/>
+                        <WrapPanel>
+                            <CheckBox x:Name="ifc_export_tab_cb" Content="Eksportuj IFC" Margin="0,7,22,7"
+                                      IsChecked="{Binding IsChecked, ElementName=ifc_cb, Mode=TwoWay}"/>
+                            <CheckBox x:Name="ifc_use_setup_cb" Content="Wskaż wybrany setup w index.json"/>
+                        </WrapPanel>
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="3*"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
+                            <StackPanel x:Name="ifc_editor_panel" Margin="0,0,22,0">
+                                <TextBlock Text="Wersja IFC" Margin="0,0,0,4"/>
+                                <ComboBox x:Name="ifc_version_cb" Padding="8,6" Margin="0,0,0,12"/>
+                                <TextBlock Text="Granice pomieszczeń (Space Boundaries)" Margin="0,0,0,4"/>
+                                <ComboBox x:Name="ifc_boundaries_cb" Padding="8,6" Margin="0,0,0,12"/>
+                                <StackPanel x:Name="ifc_flags_panel"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                <Border Background="#EDF3FA" Padding="14" CornerRadius="4">
+                                    <StackPanel>
+                                        <TextBlock Text="Jak użyć ustawień" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Przycisk poniżej zapisze obsługiwane ustawienia w modelu. index.json wskaże nazwę wybranego setupu. Następnie zapisz plik RVT i uruchom eksport."
+                                                   TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="Przenoszone ustawienia i uproszczenia" FontWeight="SemiBold" Margin="0,16,0,6"/>
+                                <TextBlock x:Name="ifc_info_text" Foreground="#536277" TextWrapping="Wrap"/>
+                                <TextBlock Text="Oryginalny JSON Autodesk pozostaje zachowany. Linki eksportujemy jako osobne pliki. Po późniejszej edycji setupów w Autodesk przygotuj zgodny zapis ponownie."
+                                           Foreground="#536277" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="2" Margin="0,12,0,0">
+                        <TextBlock x:Name="ifc_status_text" TextWrapping="Wrap" Foreground="#536277" Margin="0,0,0,10"/>
+                        <WrapPanel>
+                            <Button x:Name="ifc_apply_btn" Content="Przygotuj setup dla Extractora" Background="#173D69" Foreground="White"/>
+                            <Button x:Name="ifc_defaults_btn" Content="Wczytaj ustawienia źródłowe"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Grid>
             </TabItem>
             <TabItem Header="Podgląd index.json">
                 <Grid Margin="16">

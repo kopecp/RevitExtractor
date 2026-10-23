@@ -70,7 +70,10 @@ def build_index(settings=None, selected_2d=None, selected_3d=None):
     formats = [name for name in ("dwg", "ifc") if options[name]]
     if formats:
         derivative["export"] = {"to": formats}
-    return {"metadata": {"parameters": {"derivative_type": derivative}}}
+    parameters = {"derivative_type": derivative}
+    if options["ifc"] and options.get("ifc_setup_name"):
+        parameters["direct_params"] = {"IFCExportOption": options["ifc_setup_name"]}
+    return {"metadata": {"parameters": parameters}}
 
 
 def to_json(index):

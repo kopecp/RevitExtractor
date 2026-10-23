@@ -4,12 +4,9 @@
       "derivative_type": {
         "3dviewing": {
           "view_unique_ids": [
-            "ef222a91-e151-45ee-ab0b-cccc6ea80ab7-00255b4f"
-          ]
-        }, 
-        "2dviewing": {
-          "view_unique_ids": [
-            "abf6d7c8-77b7-4005-a8b7-5dd2b1220a3c-00149b95"
+            "4077836e-853b-48eb-bfd2-75e039951dfc-0014d13e", 
+            "5895d43e-7fd5-4d49-bd34-61d5982e9cf7-001738a3", 
+            "ad22e963-e73d-4e96-b92b-c61698a56a63-001747fa"
           ]
         }, 
         "properties_data": {
@@ -19,7 +16,15 @@
           "to": [
             "ifc"
           ]
+        }, 
+        "2dviewing": {
+          "view_unique_ids": [
+            "d37b12da-a3ea-47b4-adce-c020870a5bf5-0015aea3"
+          ]
         }
+      }, 
+      "direct_params": {
+        "IFCExportOption": "PiKej"
       }
     }
   }

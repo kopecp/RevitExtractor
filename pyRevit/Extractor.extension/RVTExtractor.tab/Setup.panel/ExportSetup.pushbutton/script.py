@@ -3,11 +3,12 @@
 from __future__ import unicode_literals
 
 __title__ = "Eksport\nsetup"
-__doc__ = "Wybierz widoki i zapisz index.json dla Autodesk Revit Extractor."
+__doc__ = "Wybierz widoki, przygotuj setup IFC w modelu i zapisz index.json dla Autodesk Revit Extractor."
 
 from pyrevit import forms, revit, script
 from extractor_model import collect_views
 from extractor_ui import ExportSetupWindow
+from extractor_ifc_storage import IfcSetupStore
 
 
 def main():
@@ -18,7 +19,7 @@ def main():
         return
     try:
         snapshot = collect_views(doc)
-        ExportSetupWindow(snapshot).ShowDialog()
+        ExportSetupWindow(snapshot, IfcSetupStore(doc)).ShowDialog()
     except Exception as error:
         script.get_logger().exception("Nie udało się otworzyć konfiguratora eksportu.")
         forms.alert("Nie udało się przygotować konfiguracji.\n\n{0}".format(error),

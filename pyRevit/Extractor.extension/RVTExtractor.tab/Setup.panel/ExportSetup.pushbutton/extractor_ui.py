@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Modal WPF editor; works entirely on a detached model snapshot."""
+"""Modal WPF editor; model writes are isolated behind the IFC store."""
 from __future__ import unicode_literals
 
 import os
@@ -8,9 +8,12 @@ import uuid
 from System import Environment
 from System.IO import File
 from System.Text import UTF8Encoding
+from System.Windows.Controls import CheckBox
 from pyrevit import forms
 
 from extractor_config import DEFAULTS, SetupError, build_index, filter_records, to_json
+from extractor_ifc import (VERSIONS, FLAGS, defaults as ifc_defaults,
+                           build_map, proposal, source_values)
 
 try:
     text = unicode
@@ -69,10 +72,16 @@ def write_index_atomic(path, content):
 
 
 class ExportSetupWindow(forms.WPFWindow):
-    def __init__(self, snapshot):
+    def __init__(self, snapshot, ifc_store=None):
         self._updating = True
         self.snapshot = snapshot
         self.last_saved_path = None
+        self._ifc_store = ifc_store
+        self._ifc_records = []
+        self._ifc_snapshot = None
+        self._ifc_error = ""
+        self._ifc_selection_error = ""
+        self._ifc_controls = {}
         self._rows = {
             "2d": [ViewRow(row) for row in snapshot["views_2d"]],
             "3d": [ViewRow(row) for row in snapshot["views_3d"]],
@@ -85,6 +94,7 @@ class ExportSetupWindow(forms.WPFWindow):
         self.model_note.Text = (
             "Widoki pochodzą z aktywnego modelu. Extractor odczyta zapisaną wersję RVT."
             + (" Model ma niezapisane zmiany." if snapshot["modified"] else ""))
+        self._init_ifc()
 
         kinds = sorted(set(row.item["kind"] for row in self._rows["2d"]))
         self.kind2d_cb.ItemsSource = ["Wszystkie typy"] + kinds
@@ -112,13 +122,138 @@ class ExportSetupWindow(forms.WPFWindow):
                         for key, name in BOOL_CONTROLS.items())
         settings["scope_2d"] = "selected" if self.selected2d_rb.IsChecked else "default"
         settings["scope_3d"] = "selected" if self.selected3d_rb.IsChecked else "default"
+        if self.ifc_use_setup_cb.IsChecked and self._ifc_snapshot:
+            settings["ifc_setup_name"] = self._ifc_snapshot["name"]
         return settings
+
+    def _init_ifc(self):
+        try:
+            if self._ifc_store is None:
+                raise SetupError("Brak połączenia z modelem — ustawienia IFC są niedostępne.")
+            self._ifc_records = self._ifc_store.read()
+        except Exception as error:
+            self._ifc_error = text(error)
+        self.ifc_version_cb.ItemsSource = [label for key, label in VERSIONS]
+        self.ifc_boundaries_cb.ItemsSource = ["0 — brak", "1 — poziom pierwszy", "2 — poziom drugi"]
+        self.ifc_source_cb.ItemsSource = [record["name"] + (
+            " — Autodesk JSON" if record["source"] is not None else " — starszy zapis Autodesk")
+            for record in self._ifc_records]
+        self.ifc_source_cb.SelectionChanged += self._on_ifc_source_changed
+        for key, label in FLAGS:
+            control = CheckBox()
+            control.Content = label
+            control.Checked += self._on_settings_changed
+            control.Unchecked += self._on_settings_changed
+            self.ifc_flags_panel.Children.Add(control)
+            self._ifc_controls[key] = control
+        self.ifc_version_cb.SelectionChanged += self._on_settings_changed
+        self.ifc_boundaries_cb.SelectionChanged += self._on_settings_changed
+        self.ifc_use_setup_cb.Checked += self._on_settings_changed
+        self.ifc_use_setup_cb.Unchecked += self._on_settings_changed
+        self.ifc_apply_btn.Click += self._on_ifc_apply
+        self.ifc_defaults_btn.Click += self._on_ifc_defaults
+
+    def _load_ifc_record(self):
+        index = self.ifc_source_cb.SelectedIndex
+        self._ifc_snapshot = self._ifc_records[index] if index >= 0 else None
+        self._ifc_selection_error = ""
+        values = ifc_defaults()
+        notes = ["Wybierz zapisany setup. Jeśli lista jest pusta, zapisz nazwany setup w oknie IFC Autodesk i otwórz konfigurator ponownie."]
+        if self._ifc_snapshot:
+            try:
+                values, notes = proposal(self._ifc_snapshot)
+            except SetupError as error:
+                self._ifc_selection_error = text(error)
+                notes = [text(error)]
+        self._load_ifc_values(values)
+        self.ifc_info_text.Text = "\n\n".join(notes)
+
+    def _on_ifc_source_changed(self, sender, args):
+        if self._updating:
+            return
+        self._updating = True
+        try:
+            self._load_ifc_record()
+            self.ifc_use_setup_cb.IsChecked = bool(self._ifc_snapshot)
+        finally:
+            self._updating = False
+        self._refresh_state()
+
+    def _load_ifc_values(self, values):
+        self.ifc_version_cb.SelectedIndex = [key for key, label in VERSIONS].index(values["Version"])
+        self.ifc_boundaries_cb.SelectedIndex = int(values["SpaceBoundaryLevel"])
+        for key, control in self._ifc_controls.items():
+            control.IsChecked = values[key]
+
+    def _ifc_values(self):
+        values = dict((key, bool(control.IsChecked)) for key, control in self._ifc_controls.items())
+        index = self.ifc_version_cb.SelectedIndex
+        values["Version"] = VERSIONS[index][0] if index >= 0 else None
+        values["SpaceBoundaryLevel"] = text(self.ifc_boundaries_cb.SelectedIndex)
+        return values
+
+    def _validate_ifc_selection(self):
+        if self._ifc_error or self._ifc_selection_error:
+            raise SetupError(self._ifc_error or self._ifc_selection_error)
+        if self._ifc_snapshot is None:
+            raise SetupError("Wybierz źródłowy setup Autodesk w zakładce IFC.")
+        if build_map(self._ifc_snapshot, self._ifc_values()) != self._ifc_snapshot["legacy"]:
+            raise SetupError("Najpierw kliknij „Przygotuj setup dla Extractora” w zakładce IFC.")
+
+    def _refresh_ifc(self):
+        message = self._ifc_error or self._ifc_selection_error
+        enabled = self._ifc_snapshot is not None and not bool(message)
+        self.ifc_editor_panel.IsEnabled = enabled
+        self.ifc_use_setup_cb.IsEnabled = enabled
+        self.ifc_defaults_btn.IsEnabled = enabled
+        changed = False
+        if enabled:
+            try:
+                data = build_map(self._ifc_snapshot, self._ifc_values())
+                changed = data != self._ifc_snapshot["legacy"]
+                message = ("Przygotuj zgodny zapis ustawień, aby Extractor mógł je odczytać."
+                           if changed else "Setup „{0}” ma zgodny zapis. Zapisz RVT przed eksportem."
+                           .format(self._ifc_snapshot["name"]))
+            except SetupError as error:
+                message = text(error)
+        self.ifc_apply_btn.IsEnabled = changed and enabled
+        self.ifc_status_text.Text = message or "Wybierz istniejący setup Autodesk z listy."
+
+    def _on_ifc_defaults(self, sender, args):
+        self._updating = True
+        try:
+            values, notes = source_values(self._ifc_snapshot)
+            self._load_ifc_values(values)
+            self.ifc_info_text.Text = "\n\n".join(notes)
+        finally:
+            self._updating = False
+        self._refresh_state()
+
+    def _on_ifc_apply(self, sender, args):
+        try:
+            result = self._ifc_store.write(self._ifc_values(), self._ifc_snapshot)
+        except Exception as error:
+            self.ifc_status_text.Text = "Nie zastosowano zmian: " + text(error)
+            forms.alert("Nie udało się zastosować setupu IFC.\n\n{0}".format(error), title="Setup IFC")
+            return
+        self._ifc_snapshot = result
+        self._ifc_records[self.ifc_source_cb.SelectedIndex] = result
+        self._updating = True
+        try:
+            self.ifc_cb.IsChecked = True
+            self.ifc_use_setup_cb.IsChecked = True
+        finally:
+            self._updating = False
+        self.model_note.Text = "Przygotowano zgodny zapis setupu IFC. Zapisz RVT przed uruchomieniem Extractora."
+        self._refresh_state()
 
     def _selected(self, dimension):
         # Includes checked items hidden by the current search/filter.
         return [row.item["uid"] for row in self._rows[dimension] if row.checked]
 
     def _payload(self):
+        if self.ifc_cb.IsChecked and self.ifc_use_setup_cb.IsChecked:
+            self._validate_ifc_selection()
         return build_index(self._settings(), self._selected("2d"), self._selected("3d"))
 
     def _on_settings_changed(self, sender, args):
@@ -145,6 +280,7 @@ class ExportSetupWindow(forms.WPFWindow):
             getattr(self, "views" + dimension + "_lv").ItemsSource = visible
 
     def _refresh_state(self):
+        self._refresh_ifc()
         settings = self._settings()
         self.tab2d.IsEnabled = settings["enable_2d"]
         self.tab3d.IsEnabled = settings["enable_3d"]
@@ -198,6 +334,10 @@ class ExportSetupWindow(forms.WPFWindow):
             self.kind2d_cb.SelectedIndex = 0
             for row in self._rows["2d"] + self._rows["3d"]:
                 row.checked = False
+            if self.ifc_source_cb.SelectedIndex < 0 and len(self._ifc_records) == 1:
+                self.ifc_source_cb.SelectedIndex = 0
+            self._load_ifc_record()
+            self.ifc_use_setup_cb.IsChecked = bool(self._ifc_snapshot) and not bool(self._ifc_error)
         finally:
             self._updating = False
         self._refresh_lists()
@@ -216,6 +356,8 @@ class ExportSetupWindow(forms.WPFWindow):
         if not path:
             return
         try:
+            if self.ifc_cb.IsChecked and self.ifc_use_setup_cb.IsChecked:
+                self._ifc_store.verify(self._ifc_snapshot)
             write_index_atomic(path, content)
         except Exception as error:
             forms.alert("Nie udało się zapisać pliku.\n\n{0}".format(error),
