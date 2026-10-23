@@ -1,0 +1,8 @@
+title: "Eksport\nsetup"
+tooltip: >-
+  Wybierz widoki i arkusze aktywnego modelu oraz zapisz index.json
+  dla natywnego Autodesk Revit Extractor. Przycisk nie uruchamia eksportu.
+author: RevitExtractor
+min_revit_version: 2026
+engine:
+  clean: true

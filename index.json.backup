@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "parameters": {
+      "derivative_type": {
+        "3dviewing": {},
+        "2dviewing": {},
+        "properties_data": {
+          "pdb": true
+        }
+      }
+    }
+  }
+}

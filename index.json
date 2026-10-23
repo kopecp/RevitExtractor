@@ -2,10 +2,23 @@
   "metadata": {
     "parameters": {
       "derivative_type": {
-        "3dviewing": {},
-        "2dviewing": {},
+        "3dviewing": {
+          "view_unique_ids": [
+            "ef222a91-e151-45ee-ab0b-cccc6ea80ab7-00255b4f"
+          ]
+        }, 
+        "2dviewing": {
+          "view_unique_ids": [
+            "abf6d7c8-77b7-4005-a8b7-5dd2b1220a3c-00149b95"
+          ]
+        }, 
         "properties_data": {
           "pdb": true
+        }, 
+        "export": {
+          "to": [
+            "ifc"
+          ]
         }
       }
     }
