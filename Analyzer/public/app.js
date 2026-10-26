@@ -1,6 +1,9 @@
 import { ModelViewer } from './viewer.js';
 import { PdfPreview } from './pdf.js';
 
+const browserMode = document.documentElement.dataset.mode === 'browser';
+let browserBackend;
+
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const icons = {
@@ -34,6 +37,7 @@ const pdf = new PdfPreview();
 function toast(message) { $('#toast').textContent = message; $('#toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 6000); }
 function status(message) { $('#status-text').textContent = message; }
 async function api(url, options = {}) {
+  if (browserMode) return browserBackend.api(url, options);
   const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', 'X-Analyzer-Token': state.token || '', ...options.headers } });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error || 'Operacja nie powiodła się.');
@@ -266,21 +270,52 @@ $('#folder-form').addEventListener('submit', async event => {
   event.preventDefault(); $('#folder-error').textContent = '';
   const button = $('#folder-form button[type="submit"]'); button.disabled = true;
   try { await addExport(await api('/api/open', { method: 'POST', body: JSON.stringify({ path: $('#folder-path').value }) })); }
-  catch (error) { $('#folder-error').textContent = error.message; }
+  catch (error) { $('#folder-error').textContent = error.name === 'AbortError' ? '' : error.message; }
   finally { button.disabled = false; }
 });
 $('#browse-folder').addEventListener('click', async () => {
   $('#browse-folder').disabled = true; $('#folder-error').textContent = 'Wybierz folder w oknie systemowym…';
-  try { await addExport(await api('/api/pick-folder', { method: 'POST', body: '{}' })); $('#folder-error').textContent = ''; }
-  catch (error) { $('#folder-error').textContent = error.message; }
+  try {
+    if (browserMode) {
+      if ('showDirectoryPicker' in window) await addExport(await browserBackend.pickFolder());
+      else { $('#local-folder-input').value = ''; $('#local-folder-input').click(); }
+    } else await addExport(await api('/api/pick-folder', { method: 'POST', body: '{}' }));
+    $('#folder-error').textContent = '';
+  }
+  catch (error) { $('#folder-error').textContent = error.name === 'AbortError' ? '' : error.message; }
   finally { $('#browse-folder').disabled = false; }
 });
 $('#sample-button').addEventListener('click', () => { if (state.exports.length) selectExport(state.exports[0]); else $('#folder-dialog').showModal(); });
 
+$('#export-help').addEventListener('click', () => $('#export-help-dialog').showModal());
+$('#close-export-help').addEventListener('click', () => $('#export-help-dialog').close());
+$('#local-folder-input').addEventListener('change', async event => {
+  if (!event.target.files.length) return;
+  $('#browse-folder').disabled = true; $('#folder-error').textContent = 'Odczytywanie folderu…';
+  try { await addExport(await browserBackend.openFiles(event.target.files)); $('#folder-error').textContent = ''; }
+  catch (error) { $('#folder-error').textContent = error.message; }
+  finally { $('#browse-folder').disabled = false; event.target.value = ''; }
+});
+
 try {
-  const session = await api('/api/session');
+  if (browserMode) {
+    $('#browse-folder').disabled = true;
+    $('#folder-path').hidden = true;
+    $('label[for="folder-path"]').hidden = true;
+    $('#folder-form button[type="submit"]').hidden = true;
+    $('#sample-button').innerHTML = `Wybierz folder eksportu ${icon('folder')}`;
+    $('#folder-form > p').textContent = 'Wybierz folder output lub jego bezpośredni katalog nadrzędny. Pliki pozostają na Twoim komputerze. Po odświeżeniu strony wybierz folder ponownie.';
+    status('Przygotowanie odczytu lokalnego…');
+    if (!navigator.serviceWorker) throw new Error('Ta przeglądarka nie obsługuje odczytu lokalnego. Użyj Chrome lub Edge przez HTTPS.');
+    const { BrowserBackend } = await import('./browser-backend.js');
+    browserBackend = new BrowserBackend();
+    await browserBackend.init();
+    $('#browse-folder').disabled = false;
+    status('Wybierz folder eksportu · pliki pozostają na Twoim komputerze');
+  }
+  const session = browserMode ? { exports: [], folderPicker: true } : await api('/api/session');
   state.token = session.token; state.exports = session.exports;
   $('#browse-folder').hidden = !session.folderPicker;
   renderExports();
   if (state.exports.length) await selectExport(state.exports[0]);
-} catch (error) { status('Brak połączenia z lokalnym serwerem'); toast(error.message); }
+} catch (error) { status(browserMode ? 'Odczyt lokalny niedostępny · odśwież stronę lub użyj Chrome / Edge' : 'Brak połączenia z lokalnym serwerem'); toast(error.message); }

@@ -2,7 +2,18 @@
 
 Lokalna aplikacja webowa do oglądania modelu SVF, rysunków PDF oraz właściwości z eksportu RevitExtractor. Główny ekran to interaktywny viewer 3D połączony z inspektorem elementów.
 
-## Uruchomienie
+## GitHub Pages
+
+**[Otwórz wersję online](https://kopecp.github.io/RevitExtractor/)** w Chrome lub Edge i wybierz **Otwórz folder**.
+Strona odczytuje wskazany `output` bez lokalnego Node.js; pliki modelu pozostają na komputerze.
+Po odświeżeniu wybierz folder ponownie. Dostępne są model 3D, PDF-y, parametry i tabele SQLite.
+Przycisk **Eksportuj z Revita 2026** zawiera instrukcję oraz jeden interaktywny skrypt PowerShell.
+
+Publikację z brancha `online`, skrypt i wymagania opisuje [główna instrukcja](../README.md).
+`npm run build:pages` tworzy osobny katalog `dist`; lokalny serwer korzysta z `public`.
+Oba tryby współdzielą interpretację właściwości i modeli źródłowych.
+
+## Uruchomienie lokalne
 
 1. Uruchom **`Start-Analyzer.cmd`** w tym folderze.
 2. Otworzy się przeglądarka pod adresem **http://127.0.0.1:4317**.
@@ -84,7 +95,7 @@ Podgląd: [drzewo modeli](docs/source-models.png). Wyniki testów: [weryfikacja 
 - Lista widoków powstaje z rzeczywistych plików SVF/PDF. Nadrzędny `bubble.json` ostatniego eksportu zawiera część statusów `inprogress`, mimo obecności gotowych zasobów; te statusy nie blokują ich przeglądania.
 - Otwieranie natywnego `.rvt`, edycja modelu, zapisywanie zmian parametrów i federacja wielu eksportów nie są częścią tej wersji.
 - Interfejs jest przeznaczony przede wszystkim do pracy na komputerze. W bardzo wąskim panelu aplikacji warto otworzyć adres w normalnej przeglądarce.
-- Hosting nie został skonfigurowany. Przed publikacją potrzebny będzie osobny sposób dostarczania eksportów i kontrola dostępu; obecne API wyboru ścieżek służy wyłącznie do pracy lokalnej.
+- Wersja Pages używa wyboru folderu i odczytu plików w przeglądarce. Poniższe API serwera Node.js i wklejanie ścieżek dotyczą tylko trybu lokalnego.
 
 ## Struktura i testy
 

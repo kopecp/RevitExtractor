@@ -1244,3 +1244,10 @@ dialog p {
 .adsk-viewing-viewer .source-browser .source-empty, .adsk-viewing-viewer .source-browser .source-tree-message { padding:12px 18px; color:var(--muted); line-height:1.5; }
 .adsk-viewing-viewer .source-browser .source-retry { margin:0 16px; }
 .adsk-viewing-viewer .source-browser .source-native-partial > lmvheader > .visibility { opacity:.65; border-bottom:2px solid #9b6a16; }
+
+#export-help-dialog { max-width: 650px; }
+.export-steps { padding-left: 22px; line-height: 1.65; }
+.export-steps li { margin: 14px 0; }
+.export-steps a { color: var(--green); }
+.export-steps pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f1f5f2; padding: 12px; font-size: 12px; border-radius: 6px; }
+#export-help-dialog > p { line-height: 1.6; color: var(--muted); }

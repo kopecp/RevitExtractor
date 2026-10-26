@@ -72,9 +72,11 @@ export class ModelViewer {
         this.loadSources();
         resolve();
       });
-      // Local-mode SVF loader applies encodeURI itself and prepends the origin.
-      // Supplying an already encoded/root-relative path double-encodes spaces.
-      const localPath = decodeURI(view.url).replace(/^\//, '');
+      // The Local loader resolves against the page directory and applies encodeURI.
+      // Strip this app's directory so project Pages paths are not duplicated.
+      const appPath = decodeURI(new URL('.', import.meta.url).pathname);
+      const decodedPath = decodeURI(view.url);
+      const localPath = decodedPath.startsWith(appPath) ? decodedPath.slice(appPath.length) : decodedPath;
       viewer.loadModel(localPath, {}, () => {}, (code, message) => {
         clearTimeout(timeout);
         reject(new Error(`Błąd wczytywania SVF (${code}): ${message || 'brakuje pliku lub format jest nieobsługiwany'}`));

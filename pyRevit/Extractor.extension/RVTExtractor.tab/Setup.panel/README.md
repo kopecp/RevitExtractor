@@ -43,11 +43,13 @@ Nie rejestrujemy automatycznie rozszerzenia ani nie zmieniamy konfiguracji pyRev
 6. Opcjonalnie przygotuj **Setup IFC** zgodnie z instrukcją poniżej.
 7. Sprawdź zakładkę **Podgląd index.json** i kliknij **Zapisz index.json**.
 
-Obecny `extractorScript_v1.ps1` w repozytorium czyta `index.json` leżący obok skryptu.
-Aby z niego skorzystać, zapisz konfigurację właśnie tam. Generator nie zmienia
-zmiennej `$sourceModel` w PowerShell: musi wskazywać ten sam model, z którego
-pochodzą wybrane widoki. Nowe/zmienione widoki muszą być zapisane w RVT przed
-późniejszym uruchomieniem Extractora; konfigurator sam modelu nie zapisuje.
+Na [stronie Analyzer](https://kopecp.github.io/RevitExtractor/) wybierz **Eksportuj z Revita 2026**
+i pobierz `Start-RevitExport-2026.ps1`. Ten jeden plik pyta o ścieżkę do indeksu, modelu RVT
+oraz folderu wyników; `index.json` możesz zapisać w dowolnym miejscu.
+Indeks musi pochodzić z tego samego modelu, który wskażesz w skrypcie.
+Nowe/zmienione widoki muszą być zapisane w RVT przed uruchomieniem Extractora;
+konfigurator sam modelu nie zapisuje. Starszy `extractorScript_v1.ps1` pozostaje przykładem
+z ręcznie wpisaną ścieżką modelu.
 
 ## Znaczenie ustawień
 

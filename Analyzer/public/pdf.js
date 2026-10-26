@@ -25,10 +25,10 @@ export class PdfPreview {
     this.status.textContent = 'Wczytywanie PDF…';
     this.zoom.value = 'fit'; this.pageNumber = 1;
     try {
-      library ||= await import('/vendor/pdfjs/build/pdf.mjs');
+      library ||= await import('./vendor/pdfjs/build/pdf.mjs');
       if (sequence !== this.sequence) return;
-      library.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/build/pdf.worker.mjs';
-      const loading = this.loading = library.getDocument({ url, cMapUrl: '/vendor/pdfjs/cmaps/', cMapPacked: true, standardFontDataUrl: '/vendor/pdfjs/standard_fonts/', wasmUrl: '/vendor/pdfjs/wasm/', isEvalSupported: false });
+      library.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdfjs/build/pdf.worker.mjs', import.meta.url).href;
+      const loading = this.loading = library.getDocument({ url, cMapUrl: new URL('./vendor/pdfjs/cmaps/', import.meta.url).href, cMapPacked: true, standardFontDataUrl: new URL('./vendor/pdfjs/standard_fonts/', import.meta.url).href, wasmUrl: new URL('./vendor/pdfjs/wasm/', import.meta.url).href, isEvalSupported: false });
       const document = await loading.promise;
       if (sequence !== this.sequence) return;
       this.document = document;
