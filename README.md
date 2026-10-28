@@ -4,11 +4,14 @@
 
 ## Od RVT do przeglądarki
 
-1. W Revit 2026 przygotuj `index.json` przyciskiem **Eksport setup** w pyRevit.
+1. W Revit 2026 zapisz model RVT i używane zestawy **Collaborate → Publish Settings**.
+   Do podstawowej próby nie potrzebujesz pyRevit ani osobnego `index.json` — konfiguracja jest zaszyta w skrypcie.
+2. Opcjonalnie przygotuj własny `index.json` przyciskiem **Eksport setup** w pyRevit,
+   np. aby wskazać konkretne widoki lub włączyć IFC.
    [Instrukcja instalacji przycisku](pyRevit/Extractor.extension/RVTExtractor.tab/Setup.panel/README.md).
    Możesz sklonować repo (`git clone --branch online https://github.com/kopecp/RevitExtractor.git`)
    i skopiować cały `ExportSetup.pushbutton` do swojego panelu pyRevit.
-2. Zapisz model RVT. Konfiguracja musi pochodzić z tego samego modelu; widoki i ustawienia IFC są związane z modelem.
+   Własna konfiguracja musi pochodzić z tego samego modelu.
 3. Na stronie wybierz **Eksportuj z Revita 2026 → Pobierz PowerShell**.
    Pobierasz jeden plik `Start-RevitExport-2026.ps1`. Potrzebujesz Windows i zainstalowanego Revita 2026 z `RevitExtractor.exe`; skrypt niczego nie instaluje.
 4. Uruchom skrypt przez **Uruchom za pomocą programu PowerShell** albo w folderze pobranego pliku:
@@ -18,16 +21,46 @@
    ```
 
    Parametr `ExecutionPolicy` dotyczy tylko tego procesu; nie zmienia zasad Windows na stałe.
-5. Wklej ścieżki do `index.json` i `.rvt` albo naciśnij Enter, aby wybrać pliki w oknie.
+5. Przy pytaniu o konfigurację naciśnij **Enter**, aby użyć wbudowanej. Możesz też wkleić ścieżkę do własnego `index.json` lub wybrać **P**, aby otworzyć okno wyboru.
+   Następnie wskaż `.rvt` — wklej ścieżkę albo naciśnij Enter, aby wybrać model w oknie.
    Wybierz folder wyników (domyślnie `Dokumenty\RevitExtractor`) i potwierdź eksport.
    Jeśli Revit jest w innym miejscu, skrypt poprosi o jego folder instalacji.
-6. Poczekaj na zakończenie. Każdy eksport dostaje osobny folder `export-DATA-ID` z `output`, `logs`, `journals`, kopią konfiguracji, `console.log` i `stderr.log`.
+6. Poczekaj na zakończenie. Każdy eksport dostaje osobny folder `export-DATA-ID` z `output`, `logs`, `journals`, użytym `index.json`, `console.log` i `stderr.log`.
 7. W Analyzerze kliknij **Otwórz folder** i wybierz `output` lub jego bezpośredni folder nadrzędny.
 
 Przeglądarka obsługuje SVF 3D, PDF, parametry, tabele SQLite, modele źródłowe i kategorie.
 Nie otwiera bezpośrednio `.rvt`. Skrypt uruchamiasz samodzielnie w Windows.
 Starszy `extractorScript_v1.ps1` i główny `index.json` to zachowane przykłady z konkretnego projektu;
-do nowego modelu użyj własnego indeksu oraz nowego launchera.
+do nowego modelu użyj nowego launchera z konfiguracją wbudowaną lub własnym indeksem.
+
+## Wbudowany indeks
+
+Enter przy wyborze konfiguracji (lub parametr `-UseDefaultIndex`) wybiera:
+
+```json
+{
+  "metadata": {
+    "parameters": {
+      "derivative_type": {
+        "2dviewing": {},
+        "3dviewing": {},
+        "properties_data": { "pdb": true }
+      }
+    }
+  }
+}
+```
+
+To podstawowy profil 2D + 3D + baza parametrów, bez IFC/DWG ani listy `view_unique_ids`.
+Dobór widoków pozostaje po stronie natywnego Extractora. Nie oznacza eksportu wszystkich widoków ani gwarantowanego krótkiego przebiegu.
+W Revit zestawy do publikacji ustawia się w **Collaborate → Publish Settings**;
+[dokumentacja Autodesk](https://help.autodesk.com/cloudhelp/2026/ENU/Revit-Cloud/files/GUID-09FBF9E2-6ECF-447D-8FA8-12AB16495BC3.htm)
+opisuje domyślny widok 3D i arkusze 2D przy publikowaniu do chmury.
+Dokładny zestaw wyników lokalnego Extractora zależy od zapisanego RVT i wymaga sprawdzenia na danym modelu.
+
+Skrypt zapisuje wbudowany indeks jako `index.json` w nowym folderze eksportu dopiero po potwierdzeniu.
+Własny indeks jest kopiowany bez zmiany zawartości. Niepoprawny własny plik powoduje błąd;
+skrypt nie zastępuje go po cichu szerszą konfiguracją domyślną.
 
 ## GitHub Pages i dane lokalne
 
@@ -73,4 +106,6 @@ Do sprawdzenia własnych ścieżek i konfiguracji:
 .\Start-RevitExport-2026.ps1 -IndexPath 'D:\Projekt\index.json' -ModelPath 'D:\Projekt\Model.rvt' -OutputParent 'D:\Eksporty' -ValidateOnly
 ```
 
+Bez `-IndexPath` walidacja używa wbudowanej konfiguracji; można też jawnie dodać `-UseDefaultIndex`.
+Parametry `-IndexPath` i `-UseDefaultIndex` wykluczają się.
 Ta opcja nie uruchamia Revita i nie tworzy folderów. Właściwy eksport zawsze pyta o potwierdzenie.

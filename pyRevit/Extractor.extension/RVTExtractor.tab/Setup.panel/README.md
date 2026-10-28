@@ -46,6 +46,8 @@ Nie rejestrujemy automatycznie rozszerzenia ani nie zmieniamy konfiguracji pyRev
 Na [stronie Analyzer](https://kopecp.github.io/RevitExtractor/) wybierz **Eksportuj z Revita 2026**
 i pobierz `Start-RevitExport-2026.ps1`. Ten jeden plik pyta o ścieżkę do indeksu, modelu RVT
 oraz folderu wyników; `index.json` możesz zapisać w dowolnym miejscu.
+Jeśli wystarcza podstawowy zakres 2D + 3D + parametry, naciśnij Enter przy pytaniu
+o konfigurację w PowerShellu: użyje wbudowanego indeksu, bez potrzeby używania pyRevit.
 Indeks musi pochodzić z tego samego modelu, który wskażesz w skrypcie.
 Nowe/zmienione widoki muszą być zapisane w RVT przed uruchomieniem Extractora;
 konfigurator sam modelu nie zapisuje. Starszy `extractorScript_v1.ps1` pozostaje przykładem

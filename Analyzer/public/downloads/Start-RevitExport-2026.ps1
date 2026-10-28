@@ -10,6 +10,7 @@ param(
     [string]$ModelPath,
     [string]$OutputParent,
     [string]$RevitDirectory = (Join-Path $env:ProgramFiles 'Autodesk\Revit 2026'),
+    [switch]$UseDefaultIndex,
     [switch]$ValidateOnly,
     [switch]$NoPause
 )
@@ -17,6 +18,34 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $resultCode = 1
+
+# No view IDs or model-specific IFC setup: leave view selection to the Extractor.
+$defaultIndexJson = @'
+{
+  "metadata": {
+    "parameters": {
+      "derivative_type": {
+        "2dviewing": {},
+        "3dviewing": {},
+        "properties_data": { "pdb": true }
+      }
+    }
+  }
+}
+'@
+
+function Select-InputFile {
+    param([string]$Label, [string]$Extension)
+    Add-Type -AssemblyName System.Windows.Forms
+    $dialog = New-Object System.Windows.Forms.OpenFileDialog
+    try {
+        $dialog.Title = $Label
+        $dialog.Filter = "$Extension (*$Extension)|*$Extension"
+        $dialog.CheckFileExists = $true
+        if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { throw 'Anulowano wybor pliku.' }
+        return $dialog.FileName
+    } finally { $dialog.Dispose() }
+}
 
 function Read-InputFile {
     param([string]$Value, [string]$Label, [string]$Extension)
@@ -27,15 +56,7 @@ function Read-InputFile {
             $Value = Read-Host 'Sciezka (Q = anuluj)'
             if ($Value -eq 'Q') { throw 'Anulowano.' }
             if ([string]::IsNullOrWhiteSpace($Value)) {
-                Add-Type -AssemblyName System.Windows.Forms
-                $dialog = New-Object System.Windows.Forms.OpenFileDialog
-                try {
-                    $dialog.Title = $Label
-                    $dialog.Filter = "$Extension (*$Extension)|*$Extension"
-                    $dialog.CheckFileExists = $true
-                    if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { throw 'Anulowano wybor pliku.' }
-                    $Value = $dialog.FileName
-                } finally { $dialog.Dispose() }
+                $Value = Select-InputFile $Label $Extension
             }
         }
         $Value = $Value.Trim().Trim('"')
@@ -50,17 +71,33 @@ function Read-InputFile {
 
 try {
     Write-Host "`nRevit Extractor 2026 - eksport lokalny" -ForegroundColor Cyan
-    Write-Host 'Najpierw zapisz RVT i przygotuj index.json w pyRevit dla tego samego modelu.'
-    if ($ValidateOnly -and (!$IndexPath -or !$ModelPath -or !$OutputParent)) { throw 'ValidateOnly wymaga IndexPath, ModelPath i OutputParent.' }
-    $IndexPath = Read-InputFile $IndexPath 'Wskaz konfiguracje index.json' '.json'
-    $ModelPath = Read-InputFile $ModelPath 'Wskaz zapisany model Revit 2026 (.rvt)' '.rvt'
+    Write-Host 'Najpierw zapisz RVT, w tym zestawy Collaborate > Publish Settings, jesli ich uzywasz.'
+    if ($UseDefaultIndex -and ![string]::IsNullOrWhiteSpace($IndexPath)) { throw 'Wybierz UseDefaultIndex albo IndexPath, nie oba naraz.' }
+    if ($ValidateOnly -and (!$ModelPath -or !$OutputParent)) { throw 'ValidateOnly wymaga ModelPath i OutputParent.' }
+    if (!$UseDefaultIndex -and [string]::IsNullOrWhiteSpace($IndexPath)) {
+        if ($ValidateOnly) { $UseDefaultIndex = $true }
+        else {
+            Write-Host "`nKonfiguracja: Enter = wbudowana (2D + 3D + parametry)."
+            Write-Host 'Nie wymusza listy widokow. Zakres wybiera Extractor; nie oznacza to wszystkich widokow.'
+            $choice = (Read-Host 'Enter = domyslna, P = wybierz index.json, Q = anuluj, lub wklej sciezke').Trim()
+            if ($choice -eq 'Q') { throw 'Anulowano.' }
+            if (!$choice) { $UseDefaultIndex = $true }
+            elseif ($choice -eq 'P') { $IndexPath = Select-InputFile 'Wskaz konfiguracje index.json' '.json' }
+            else { $IndexPath = $choice }
+        }
+    }
 
-    $config = Get-Content -LiteralPath $IndexPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($UseDefaultIndex) { $config = $defaultIndexJson | ConvertFrom-Json }
+    else {
+        $IndexPath = Read-InputFile $IndexPath 'Wskaz konfiguracje index.json' '.json'
+        $config = Get-Content -LiteralPath $IndexPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    }
     if (!$config -or !$config.PSObject.Properties['metadata'] -or !$config.metadata -or
         !$config.metadata.PSObject.Properties['parameters'] -or !$config.metadata.parameters -or
         !$config.metadata.parameters.PSObject.Properties['derivative_type'] -or !$config.metadata.parameters.derivative_type) {
         throw 'Nieprawidlowa konfiguracja: wymagane metadata.parameters.derivative_type. Wygeneruj index.json w pyRevit.'
     }
+    $ModelPath = Read-InputFile $ModelPath 'Wskaz zapisany model Revit 2026 (.rvt)' '.rvt'
 
     $RevitDirectory = $RevitDirectory.Trim().Trim('"')
     $exe = Join-Path $RevitDirectory 'RevitExtractor\RevitExtractor.exe'
@@ -89,7 +126,10 @@ try {
         if ($value -match '["\r\n]') { throw 'Sciezka zawiera niedozwolony znak.' }
     }
 
-    Write-Host "`nKonfiguracja: $IndexPath"
+    if ($UseDefaultIndex) {
+        Write-Host "`nKonfiguracja: wbudowana - 2D + 3D + parametry, domyslny zakres Extractora."
+        Write-Host 'Indeks zostanie zapisany w nowym folderze eksportu jako index.json.'
+    } else { Write-Host "`nKonfiguracja: $IndexPath" }
     Write-Host "Model RVT:   $ModelPath"
     Write-Host "Extractor:   $version"
     Write-Host "Wyniki:      $OutputParent (nowy osobny folder dla kazdego uruchomienia)"
@@ -107,7 +147,9 @@ try {
         $journalDir = Join-Path $runRoot 'journals'
         $runIndex = Join-Path $runRoot 'index.json'
         New-Item -ItemType Directory -Path $outputDir,$logDir,$journalDir -Force | Out-Null
-        Copy-Item -LiteralPath $IndexPath -Destination $runIndex
+        if ($UseDefaultIndex) {
+            [IO.File]::WriteAllText($runIndex, $defaultIndexJson + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+        } else { Copy-Item -LiteralPath $IndexPath -Destination $runIndex }
         $arguments = @($runIndex, $ModelPath, '-RCEPath', $RevitDirectory, '-LogPath', $logDir, '-journalPath', $journalDir)
         $argumentLine = ($arguments | ForEach-Object { '"' + $_.TrimEnd('\') + '"' }) -join ' '
         Write-Host "`nTrwa eksport. Moze to potrwac wiele minut. Poczekaj na zakonczenie."

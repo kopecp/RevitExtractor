@@ -42,3 +42,19 @@ Nieistniejący indeks jest odrzucany z kodem różnym od zera.
 interakcja w jego procesie i kompletność wyników nowego modelu pozostają do próby użytkownika.
 Launcher zachowuje kolejność argumentów istniejącego skryptu: indeks, RVT,
 `-RCEPath`, `-LogPath`, `-journalPath`; wynik trafia do osobnego nowego folderu.
+
+## Wbudowany indeks — 28.10.2026
+
+- Enter przy pytaniu o indeks wybiera wbudowane 2D + 3D + `properties_data.pdb=true`,
+  bez `view_unique_ids`, IFC i DWG. `P` wybiera własny plik, `Q` anuluje.
+- Rzeczywisty parser `Autodesk.ExtractorUtility.IndexJson` z instalacji Revit 2026
+  przyjął dokładny JSON wyciągnięty ze skryptu: `Has2DViewing=True`, `Has3DViewing=True`,
+  `GeneratePropertyDB=True`, obie listy wybranych widoków puste, IFC/DWG wyłączone.
+- Test launchera w Windows PowerShell 5.1 używa fałszywej instalacji i zastępczej
+  funkcji `Start-Process`. Potwierdza zapis domyślnego JSON-a bez BOM przed startem,
+  kolejność argumentów, identyczną bajtowo kopię własnego indeksu, walidację obu trybów,
+  anulowanie i odrzucanie brakującego/uszkodzonego indeksu oraz sprzecznych parametrów.
+  Walidacja i anulowanie nie tworzą folderów wyników.
+- `npm test`: 25/25; składnia JS i build Pages poprawne.
+- Nie uruchamiano rzeczywistego eksportu. Parser potwierdza profil i brak narzuconej
+  listy widoków, nie potwierdza zestawu widoków wybranego dla konkretnego RVT.
